@@ -201,7 +201,7 @@ func (util *DbUtil) WithinRange(Db *sql.DB,firstOfMonth,lastOfMonth time.Time) e
 		}
 	}
 	time.Sleep(5 * time.Second)
-	srerr := util.InsertLastMonthHistory(Db,firstOfMonth1,lastOfMonth1,"amf_session_rel")
+	srerr := util.InsertLastMonthHistory(Db,firstOfMonth1,lastOfMonth1,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
