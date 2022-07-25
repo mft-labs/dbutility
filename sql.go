@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"amfui/utilities"
 	"fmt"
-	"time"
 )
 
 const (
@@ -45,11 +44,11 @@ func (util *DbUtil) DeleteHistory(context utilities.AppContext,Db *sql.DB,fromda
 	return nil
 }
 
-func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB,then time.Time,tablename string) error{
+func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB,then string,tablename string) error{
 	if tablename == "amf_message_history"{
 		Query := INSERT_INTO_MESSAGE_HISTORY+SELECT_MESSAGES+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
-		resp, err := Db.Exec(Query,then.Format("2006-01-02 15:04:05"))
+		resp, err := Db.Exec(Query,then)
 		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
 		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
@@ -58,7 +57,7 @@ func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB
 	} else if tablename == "amf_session_history"{
 		Query := INSERT_INTO_SESSION_HISTORY+SELECT_SESSIONS+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
-		resp, err := Db.Exec(Query,then.Format("2006-01-02 15:04:05"))
+		resp, err := Db.Exec(Query,then)
 		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
 		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
@@ -68,7 +67,7 @@ func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB
 	} else if tablename == "amf_session_rel_history"{
 		Query := INSERT_INTO_SESSION_REL_HISTORY+SELECT_SESSION_REL+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
-		resp, err := Db.Exec(Query,then.Format("2006-01-02 15:04:05"))
+		resp, err := Db.Exec(Query,then)
 		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
 		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
@@ -78,7 +77,7 @@ func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB
 	} else if tablename == "amf_event_history"{
 		Query := INSERT_INTO_EVENT_HISTORY+SELECT_EVENT+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
-		resp, err := Db.Exec(Query,then.Format("2006-01-02 15:04:05"))
+		resp, err := Db.Exec(Query,then)
 		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
 		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
@@ -89,10 +88,9 @@ func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB
 	return nil
 }
 
-
-func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.DB,firstOfMonth,lastOfMonth,tablename string) error{
+func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate,tablename string) error{
 	if tablename == "amf_message_history"{
-		whereClause := " where create_time >= '"+firstOfMonth+"' and create_time <= '"+lastOfMonth+"'"
+		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_MESSAGE_HISTORY+SELECT_MESSAGES+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
@@ -103,7 +101,7 @@ func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.
 		}
 		return nil
 	} else if tablename == "amf_session_history"{
-		whereClause := " where create_time >= '"+firstOfMonth+"' and create_time <= '"+lastOfMonth+"'"
+		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_SESSION_HISTORY+SELECT_SESSIONS+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
@@ -114,7 +112,7 @@ func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.
 		}
 		return nil
 	} else if tablename == "amf_session_rel_history"{
-		whereClause := " where create_time >= '"+firstOfMonth+"' and create_time <= '"+lastOfMonth+"'"
+		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_SESSION_REL_HISTORY+SELECT_SESSION_REL+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
@@ -125,7 +123,7 @@ func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.
 		}
 		return nil
 	} else if tablename == "amf_event_history"{
-		whereClause := " where create_time >= '"+firstOfMonth+"' and create_time <= '"+lastOfMonth+"'"
+		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_EVENT_HISTORY+SELECT_EVENT+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)

@@ -15,33 +15,48 @@ type DbUtil struct{
 
 func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utilitytype string) error{
 	now := time.Now().UTC()
-	lastmonth := now.AddDate(0, -1, 0)
-	currentYear, lastMonth, _ := lastmonth.Date()
-	currentLocation := now.Location()
-	firstOfMonth := time.Date(currentYear, lastMonth, 1, 0, 0, 0, 0, currentLocation)
-	lastOfMonth := time.Date(currentYear, lastMonth+1, 0, 23, 59, 59, 999999999, currentLocation)
+	presentday := now.AddDate(0,0,-1)
+	previousdays := presentday.AddDate(0, 0, -14)
+	//todate := presentday.Format("2006-01-02")+" 23:59:59"
+	fromdate := previousdays.Format("2006-01-02")+" 23:59:59"
+	//fmt.Printf("todate ::%v\n",todate)
 	if utilitytype == "all"{
-		err := util.RangeAll(context,Db,lastOfMonth)
+		err := util.RangeAll(context,Db,fromdate)
 		if err != nil{
 			fmt.Printf("error when inserting records to history tables%v",err)
 			context.Logger.Info("error when inserting records to history tables%v",err)
 			return err
 		}
-	} else if utilitytype == "lastmonth"{
-		err := util.WithinRange(context,Db,firstOfMonth,lastOfMonth)
+	/* else if utilitytype == "lastmonth"{
+		err := util.WithinRange(context,Db,fromdate,todate)
+		if err != nil{
+			fmt.Printf("error when inserting range of records to history tables%v\n",err)
+			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
+			return err
+		}
+	}*/ } else if utilitytype == "deleteall"{
+		err := util.DeleteAll(context,Db,fromdate)
 		if err != nil{
 			fmt.Printf("error when inserting range of records to history tables%v\n",err)
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
 		}
 	}
+	/*  else if utilitytype == "deletebeforeweek"{
+		err := util.DeleteWithinRange(context,Db,fromdate,todate)
+		if err != nil{
+			fmt.Printf("error when inserting range of records to history tables%v\n",err)
+			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
+			return err
+		}
+	}*/
 
 	return nil
 }
 
-func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,lastOfMonth time.Time) error{
-	context.Logger.Info("Date range is: %v\n",lastOfMonth)
-	err:= util.InsertToHistoryTable(context,Db,lastOfMonth,"amf_message_history")
+func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14daydate string) error{
+	context.Logger.Info("Date range is: %v\n",last14daydate)
+	err:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_message_history")
 	if err != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else{
@@ -50,16 +65,9 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,lastOfMonth
 			return err
 		}
 
-	}  else {
-		derr := util.DeleteHistory(context,Db,"",lastOfMonth.Format("2006-01-02 15:04:05"),"amf_message")
-		if derr != nil{
-			fmt.Printf("error when deleting message table%v",err)
-			context.Logger.Info("error when deleting message table%v",err)
-			return err
-		}
 	}
 	time.Sleep(5 * time.Second)
-	serr:= util.InsertToHistoryTable(context,Db,lastOfMonth,"amf_session_history")
+	serr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_session_history")
 	if serr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else{
@@ -68,16 +76,9 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,lastOfMonth
 			return serr
 		}
 
-	} else {
-		derr := util.DeleteHistory(context,Db,"",lastOfMonth.Format("2006-01-02 15:04:05"),"amf_session")
-		if derr != nil{
-			fmt.Printf("error when deleting session table%v",err)
-			context.Logger.Info("error when deleting session table%v",err)
-			return err
-		}
 	}
 	time.Sleep(5 * time.Second)
-	srerr:= util.InsertToHistoryTable(context,Db,lastOfMonth,"amf_session_rel_history")
+	srerr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else{
@@ -85,16 +86,9 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,lastOfMonth
 			context.Logger.Info("error when inserting records to session rel history table%v",srerr)
 			return srerr
 		}
-	}else {
-		derr := util.DeleteHistory(context,Db,"",lastOfMonth.Format("2006-01-02 15:04:05"),"amf_session_rel")
-		if derr != nil{
-			fmt.Printf("error when deleting session rel table%v",err)
-			context.Logger.Info("error when deleting session rel table%v",err)
-			return err
-		}
 	}
 	time.Sleep(5 * time.Second)
-	eerr:= util.InsertToHistoryTable(context,Db,lastOfMonth,"amf_event_history")
+	eerr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_event_history")
 	if eerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else{
@@ -102,21 +96,12 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,lastOfMonth
 			context.Logger.Info("error when inserting records to event history table%v",eerr)
 			return eerr
 		}
-	} else {
-		derr := util.DeleteHistory(context,Db,"",lastOfMonth.Format("2006-01-02 15:04:05"),"amf_event")
-		if derr != nil{
-			fmt.Printf("error when deleting event table%v",err)
-			context.Logger.Info("error when deleting event table%v",err)
-			return err
-		}
 	}
 	return nil
 }
 
-func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,firstOfMonth,lastOfMonth time.Time) error{
-	firstOfMonth1 := firstOfMonth.Format("2006-01-02 15:04:05")
-	lastOfMonth1 := lastOfMonth.Format("2006-01-02 15:04:05")
-	err := util.InsertLastMonthHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_message_history")
+func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate string) error{
+	err := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_message_history")
 	if err != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else{
@@ -124,16 +109,9 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,firstOfM
 			context.Logger.Info("error when inserting message history record%v\n",err)
 			return err
 		}
-	}  else {
-		derr := util.DeleteHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_message")
-		if derr != nil{
-			fmt.Printf("error when deleting message table%v",err)
-			context.Logger.Info("error when deleting message table%v",err)
-			return err
-		}
 	}
 	time.Sleep(5 * time.Second)
-	serr := util.InsertLastMonthHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_session_history")
+	serr := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_session_history")
 	if serr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
@@ -141,16 +119,9 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,firstOfM
 			context.Logger.Info("error when inserting session history record%v\n", err)
 			return serr
 		}
-	} else {
-		derr := util.DeleteHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_session")
-		if derr != nil{
-			fmt.Printf("error when deleting session table%v",err)
-			context.Logger.Info("error when deleting session table%v",err)
-			return err
-		}
 	}
 	time.Sleep(5 * time.Second)
-	srerr := util.InsertLastMonthHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_session_rel_history")
+	srerr := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
@@ -158,16 +129,9 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,firstOfM
 			context.Logger.Info("error when inserting session relation record%v\n", srerr)
 			return srerr
 		}
-	} else {
-		derr := util.DeleteHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_session_rel")
-		if derr != nil{
-			fmt.Printf("error when deleting session rel table%v",err)
-			context.Logger.Info("error when deleting session rel table%v",err)
-			return err
-		}
 	}
 	time.Sleep(5 * time.Second)
-	eventerr := util.InsertLastMonthHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_event_history")
+	eventerr := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_event_history")
 	if eventerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
@@ -175,13 +139,68 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,firstOfM
 			context.Logger.Info("error when inserting event history record%v\n", eventerr)
 			return eventerr
 		}
-	} else {
-		derr := util.DeleteHistory(context,Db,firstOfMonth1,lastOfMonth1,"amf_event")
-		if derr != nil{
-			fmt.Printf("error when deleting event table%v",err)
-			context.Logger.Info("error when deleting event table%v",err)
-			return err
-		}
+	}
+	return nil
+}
+
+func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14daydate string) error{
+	dmerr := util.DeleteHistory(context,Db,"",last14daydate,"amf_message")
+	if dmerr != nil{
+		fmt.Printf("error when deleting message table%v",dmerr)
+		context.Logger.Info("error when deleting message table%v",dmerr)
+		return dmerr
+	}
+
+	dserr := util.DeleteHistory(context,Db,"",last14daydate,"amf_session")
+	if dserr != nil{
+		fmt.Printf("error when deleting session table%v",dserr)
+		context.Logger.Info("error when deleting session table%v",dserr)
+		return dserr
+	}
+
+	dsrerr := util.DeleteHistory(context,Db,"",last14daydate,"amf_session_rel")
+	if dsrerr != nil{
+		fmt.Printf("error when deleting session rel table%v",dsrerr)
+		context.Logger.Info("error when deleting session rel table%v",dsrerr)
+		return dsrerr
+	}
+
+	deerr := util.DeleteHistory(context,Db,"",last14daydate,"amf_event")
+	if deerr != nil{
+		fmt.Printf("error when deleting event table%v",deerr)
+		context.Logger.Info("error when deleting event table%v",deerr)
+		return deerr
+	}
+	return nil
+}
+
+func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate string) error{
+	dmerr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_message")
+	if dmerr != nil{
+		fmt.Printf("error when deleting message table%v",dmerr)
+		context.Logger.Info("error when deleting message table%v",dmerr)
+		return dmerr
+	}
+
+	dserr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_session")
+	if dserr != nil{
+		fmt.Printf("error when deleting session table%v",dserr)
+		context.Logger.Info("error when deleting session table%v",dserr)
+		return dserr
+	}
+
+	dsrerr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_session_rel")
+	if dsrerr != nil{
+		fmt.Printf("error when deleting session rel table%v",dsrerr)
+		context.Logger.Info("error when deleting session rel table%v",dsrerr)
+		return dsrerr
+	}
+
+	deerr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_event")
+	if deerr != nil{
+		fmt.Printf("error when deleting event table%v",deerr)
+		context.Logger.Info("error when deleting event table%v",deerr)
+		return deerr
 	}
 	return nil
 }
