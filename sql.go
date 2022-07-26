@@ -137,3 +137,26 @@ func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.
 	return nil
 }
 
+func (util *DbUtil) CheckCount(context utilities.AppContext,Db *sql.DB,tablename,fromdate,todate string) (int,error){
+	if fromdate == ""{
+		query := "select count(*) from "+tablename+" where create_time <= $1"
+		row := Db.QueryRow(query,todate)
+		var count int
+		err := row.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+		return count, nil
+	} else {
+		query := "select count(*) from "+tablename+" where create_time >= $1 and create_time <= $2"
+		row := Db.QueryRow(query,fromdate,todate)
+		var count int
+		err := row.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+		return count, nil
+	}
+	return 0,nil
+
+}

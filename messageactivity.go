@@ -13,49 +13,65 @@ type DbUtil struct{
 	Timezone string
 }
 
-func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utilitytype string) error{
+func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utilitytype,startdate,enddate string,clean bool) error{
+	startdate = startdate +" 00:00:00"
+	enddate = enddate+" 23:59:59"
 	now := time.Now().UTC()
 	presentday := now.AddDate(0,0,-1)
 	previousdays := presentday.AddDate(0, 0, -14)
-	//todate := presentday.Format("2006-01-02")+" 23:59:59"
 	fromdate := previousdays.Format("2006-01-02")+" 23:59:59"
-	//fmt.Printf("todate ::%v\n",todate)
-	if utilitytype == "all"{
-		err := util.RangeAll(context,Db,fromdate)
-		if err != nil{
-			fmt.Printf("error when inserting records to history tables%v",err)
-			context.Logger.Info("error when inserting records to history tables%v",err)
+	if clean == false && utilitytype == "all" {
+		fmt.Printf("Date range is::%v\n", fromdate)
+		context.Logger.Info("Date range is::%v\n", fromdate)
+		err := util.RangeAll(context, Db, fromdate)
+		if err != nil {
+			fmt.Printf("error when inserting records to history tables%v", err)
+			context.Logger.Info("error when inserting records to history tables%v", err)
 			return err
 		}
-	/* else if utilitytype == "lastmonth"{
-		err := util.WithinRange(context,Db,fromdate,todate)
+	} else if utilitytype == "" && clean == false {
+		fmt.Printf("Start Date is::%v\n", startdate)
+		fmt.Printf("End Date is::%v\n", enddate)
+		context.Logger.Info("Start Date is::%v\n", startdate)
+		context.Logger.Info("End Date is::%v\n", enddate)
+		err := util.WithinRange(context,Db,startdate,enddate)
 		if err != nil{
 			fmt.Printf("error when inserting range of records to history tables%v\n",err)
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
 		}
-	}*/ } else if utilitytype == "deleteall"{
+	 } else if clean && utilitytype == "all"{
+		fmt.Printf("Date range is::%v\n", fromdate)
+		context.Logger.Info("Date range is::%v\n", fromdate)
 		err := util.DeleteAll(context,Db,fromdate)
 		if err != nil{
 			fmt.Printf("error when inserting range of records to history tables%v\n",err)
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
 		}
-	}
-	/*  else if utilitytype == "deletebeforeweek"{
-		err := util.DeleteWithinRange(context,Db,fromdate,todate)
+	} else if clean && utilitytype == "" {
+		fmt.Printf("Start Date is::%v\n", startdate)
+		fmt.Printf("End Date is::%v\n", enddate)
+		context.Logger.Info("Start Date is::%v\n", startdate)
+		context.Logger.Info("End Date is::%v\n", enddate)
+		err := util.DeleteWithinRange(context,Db,startdate,enddate)
 		if err != nil{
 			fmt.Printf("error when inserting range of records to history tables%v\n",err)
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
 		}
-	}*/
+	}
 
 	return nil
 }
 
 func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14daydate string) error{
 	context.Logger.Info("Date range is: %v\n",last14daydate)
+	count,cmerr := util.CheckCount(context,Db,"amf_message","",last14daydate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from message table is: %v\n",count)
+	context.Logger.Info("Count from message table is: %v\n",count)
 	err:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_message_history")
 	if err != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
@@ -67,6 +83,11 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 
 	}
 	time.Sleep(5 * time.Second)
+	scount,cserr := util.CheckCount(context,Db,"amf_session","",last14daydate)
+	if cserr != nil{
+	}
+	fmt.Printf("Count from session table is: %v\n",scount)
+	context.Logger.Info("Count from session table is: %v\n",scount)
 	serr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_session_history")
 	if serr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
@@ -78,6 +99,11 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 
 	}
 	time.Sleep(5 * time.Second)
+	srcount,csrerr := util.CheckCount(context,Db,"amf_session_rel","",last14daydate)
+	if csrerr != nil{
+	}
+	fmt.Printf("Count from session relation table is: %v\n",srcount)
+	context.Logger.Info("Count from session relation table is: %v\n",srcount)
 	srerr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
@@ -88,6 +114,11 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 		}
 	}
 	time.Sleep(5 * time.Second)
+	ercount,ceerr := util.CheckCount(context,Db,"amf_event","",last14daydate)
+	if ceerr != nil{
+	}
+	fmt.Printf("Count from event table is: %v\n",ercount)
+	context.Logger.Info("Count from event table is: %v\n",ercount)
 	eerr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_event_history")
 	if eerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
@@ -100,8 +131,13 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 	return nil
 }
 
-func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate string) error{
-	err := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_message_history")
+func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdate,enddate string) error{
+	count,cmerr := util.CheckCount(context,Db,"amf_message",startdate,enddate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from message table is: %v\n",count)
+	context.Logger.Info("Count from message table is: %v\n",count)
+	err := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_message_history")
 	if err != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else{
@@ -111,7 +147,12 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,last14da
 		}
 	}
 	time.Sleep(5 * time.Second)
-	serr := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_session_history")
+	scount,cserr := util.CheckCount(context,Db,"amf_session",startdate,enddate)
+	if cserr != nil{
+	}
+	fmt.Printf("Count from session table is: %v\n",scount)
+	context.Logger.Info("Count from session table is: %v\n",scount)
+	serr := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_session_history")
 	if serr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
@@ -121,7 +162,13 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,last14da
 		}
 	}
 	time.Sleep(5 * time.Second)
-	srerr := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_session_rel_history")
+	srcount,csrerr := util.CheckCount(context,Db,"amf_session_rel",startdate,enddate)
+	if csrerr != nil{
+	}
+	fmt.Printf("Count from session relation table is: %v\n",srcount)
+	context.Logger.Info("Count from session relation table is: %v\n",srcount)
+
+	srerr := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
@@ -131,7 +178,12 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,last14da
 		}
 	}
 	time.Sleep(5 * time.Second)
-	eventerr := util.InsertLastMonthHistory(context,Db,last14daydate,presentDate,"amf_event_history")
+	ercount,ceerr := util.CheckCount(context,Db,"amf_event",startdate,enddate)
+	if ceerr != nil{
+	}
+	fmt.Printf("Count from event table is: %v\n",ercount)
+	context.Logger.Info("Count from event table is: %v\n",ercount)
+	eventerr := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_event_history")
 	if eventerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
 		} else {
@@ -144,12 +196,24 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,last14da
 }
 
 func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14daydate string) error{
+	count,cmerr := util.CheckCount(context,Db,"amf_message","",last14daydate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from message table is: %v\n",count)
+	context.Logger.Info("Count from message table is: %v\n",count)
+
 	dmerr := util.DeleteHistory(context,Db,"",last14daydate,"amf_message")
 	if dmerr != nil{
 		fmt.Printf("error when deleting message table%v",dmerr)
 		context.Logger.Info("error when deleting message table%v",dmerr)
 		return dmerr
 	}
+
+	scount,cserr := util.CheckCount(context,Db,"amf_session","",last14daydate)
+	if cserr != nil{
+	}
+	fmt.Printf("Count from session table is: %v\n",scount)
+	context.Logger.Info("Count from session table is: %v\n",scount)
 
 	dserr := util.DeleteHistory(context,Db,"",last14daydate,"amf_session")
 	if dserr != nil{
@@ -158,6 +222,11 @@ func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14dayd
 		return dserr
 	}
 
+	srcount,csrerr := util.CheckCount(context,Db,"amf_session_rel","",last14daydate)
+	if csrerr != nil{
+	}
+	fmt.Printf("Count from session relation table is: %v\n",srcount)
+	context.Logger.Info("Count from session relation table is: %v\n",srcount)
 	dsrerr := util.DeleteHistory(context,Db,"",last14daydate,"amf_session_rel")
 	if dsrerr != nil{
 		fmt.Printf("error when deleting session rel table%v",dsrerr)
@@ -165,6 +234,11 @@ func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14dayd
 		return dsrerr
 	}
 
+	ercount,ceerr := util.CheckCount(context,Db,"amf_event","",last14daydate)
+	if ceerr != nil{
+	}
+	fmt.Printf("Count from event table is: %v\n",ercount)
+	context.Logger.Info("Count from event table is: %v\n",ercount)
 	deerr := util.DeleteHistory(context,Db,"",last14daydate,"amf_event")
 	if deerr != nil{
 		fmt.Printf("error when deleting event table%v",deerr)
@@ -175,13 +249,22 @@ func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14dayd
 }
 
 func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate string) error{
+	count,cmerr := util.CheckCount(context,Db,"amf_message",last14daydate,presentDate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from message table is: %v\n",count)
+	context.Logger.Info("Count from message table is: %v\n",count)
 	dmerr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_message")
 	if dmerr != nil{
 		fmt.Printf("error when deleting message table%v",dmerr)
 		context.Logger.Info("error when deleting message table%v",dmerr)
 		return dmerr
 	}
-
+	scount,cserr := util.CheckCount(context,Db,"amf_session",last14daydate,presentDate)
+	if cserr != nil{
+	}
+	fmt.Printf("Count from session table is: %v\n",scount)
+	context.Logger.Info("Count from session table is: %v\n",scount)
 	dserr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_session")
 	if dserr != nil{
 		fmt.Printf("error when deleting session table%v",dserr)
@@ -189,6 +272,11 @@ func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,la
 		return dserr
 	}
 
+	srcount,csrerr := util.CheckCount(context,Db,"amf_session_rel",last14daydate,presentDate)
+	if csrerr != nil{
+	}
+	fmt.Printf("Count from session relation table is: %v\n",srcount)
+	context.Logger.Info("Count from session relation table is: %v\n",srcount)
 	dsrerr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_session_rel")
 	if dsrerr != nil{
 		fmt.Printf("error when deleting session rel table%v",dsrerr)
@@ -196,6 +284,11 @@ func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,la
 		return dsrerr
 	}
 
+	ercount,ceerr := util.CheckCount(context,Db,"amf_event",last14daydate,presentDate)
+	if ceerr != nil{
+	}
+	fmt.Printf("Count from event table is: %v\n",ercount)
+	context.Logger.Info("Count from event table is: %v\n",ercount)
 	deerr := util.DeleteHistory(context,Db,last14daydate,presentDate,"amf_event")
 	if deerr != nil{
 		fmt.Printf("error when deleting event table%v",deerr)
