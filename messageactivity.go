@@ -13,14 +13,14 @@ type DbUtil struct{
 	Timezone string
 }
 
-func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utilitytype,startdate,enddate string,clean bool) error{
+func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utilitytype,startdate,enddate string,clean,validatemain,validatehistory bool) error{
 	startdate = startdate +" 00:00:00"
 	enddate = enddate+" 23:59:59"
 	now := time.Now().UTC()
 	presentday := now.AddDate(0,0,-1)
 	previousdays := presentday.AddDate(0, 0, -14)
 	fromdate := previousdays.Format("2006-01-02")+" 23:59:59"
-	if clean == false && utilitytype == "all" {
+	if clean == false && utilitytype == "all" && validatemain == false && validatehistory == false{
 		fmt.Printf("Date range is::%v\n", fromdate)
 		context.Logger.Info("Date range is::%v\n", fromdate)
 		err := util.RangeAll(context, Db, fromdate)
@@ -29,7 +29,7 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utility
 			context.Logger.Info("error when inserting records to history tables%v", err)
 			return err
 		}
-	} else if utilitytype == "" && clean == false {
+	} else if utilitytype == "" && clean == false && validatemain == false && validatehistory == false{
 		fmt.Printf("Start Date is::%v\n", startdate)
 		fmt.Printf("End Date is::%v\n", enddate)
 		context.Logger.Info("Start Date is::%v\n", startdate)
@@ -40,7 +40,7 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utility
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
 		}
-	 } else if clean && utilitytype == "all"{
+	 } else if clean && utilitytype == "all" && validatemain == false && validatehistory == false{
 		fmt.Printf("Date range is::%v\n", fromdate)
 		context.Logger.Info("Date range is::%v\n", fromdate)
 		err := util.DeleteAll(context,Db,fromdate)
@@ -49,7 +49,7 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utility
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
 		}
-	} else if clean && utilitytype == "" {
+	} else if clean && utilitytype == "" && validatemain == false && validatehistory == false{
 		fmt.Printf("Start Date is::%v\n", startdate)
 		fmt.Printf("End Date is::%v\n", enddate)
 		context.Logger.Info("Start Date is::%v\n", startdate)
@@ -59,6 +59,26 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utility
 			fmt.Printf("error when inserting range of records to history tables%v\n",err)
 			context.Logger.Info("error when inserting range of records to history tables%v\n",err)
 			return err
+		}
+	} else if validatemain && utilitytype == "all"{
+		err := util.ValidateAll(context,Db,fromdate,"main")
+		if err != nil{
+
+		}
+	} else if validatemain && utilitytype == ""{
+		err := util.ValidateWithinRange(context,Db,startdate,enddate,"main")
+		if err != nil{
+
+		}
+	}  else if validatehistory && utilitytype == "all"{
+		err := util.ValidateAll(context,Db,fromdate,"history")
+		if err != nil{
+
+		}
+	} else if validatehistory && utilitytype == ""{
+		err := util.ValidateWithinRange(context,Db,startdate,enddate,"history")
+		if err != nil{
+
 		}
 	}
 
@@ -295,5 +315,88 @@ func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,la
 		context.Logger.Info("error when deleting event table%v",deerr)
 		return deerr
 	}
+	return nil
+}
+
+
+func (util *DbUtil) ValidateAll(context utilities.AppContext,Db *sql.DB,last14daydate,tabletype string) error{
+	var tablename string
+	var sessiontable string
+	var sessionreltable string
+	var eventtable string
+	if tabletype == "main"{
+		tablename = "amf_message"
+		sessiontable = "amf_session"
+		sessionreltable = "amf_session_rel"
+		eventtable = "amf_event"
+	} else {
+		tablename = "amf_message_history"
+		sessiontable = "amf_session_history"
+		sessionreltable = "amf_session_rel_history"
+		eventtable = "amf_event_history"
+	}
+	count,cmerr := util.CheckCount(context,Db,tablename,"",last14daydate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",tablename,count)
+	context.Logger.Info("Count from %v table is: %v\n",tablename,count)
+	count1,cmerr := util.CheckCount(context,Db,sessiontable,"",last14daydate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",sessiontable,count1)
+	context.Logger.Info("Count from %v table is: %v\n",sessiontable,count1)
+	count2,cmerr := util.CheckCount(context,Db,sessionreltable,"",last14daydate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",sessionreltable,count2)
+	context.Logger.Info("Count from %v table is: %v\n",sessionreltable,count2)
+	count3,cmerr := util.CheckCount(context,Db,eventtable,"",last14daydate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",eventtable,count3)
+	context.Logger.Info("Count from %v table is: %v\n",eventtable,count3)
+	util.CheckDistinctSenderWithCount(context,Db,tablename,"",last14daydate)
+	util.CheckDistinctReceiverWithCount(context,Db,tablename,"",last14daydate)
+	return nil
+}
+
+func (util *DbUtil) ValidateWithinRange(context utilities.AppContext,Db *sql.DB,startdate,enddate,tabletype string) error{
+	var tablename string
+	var sessiontable string
+	var sessionreltable string
+	var eventtable string
+	if tabletype == "main"{
+		tablename = "amf_message"
+		sessiontable = "amf_session"
+		sessionreltable = "amf_session_rel"
+		eventtable = "amf_event"
+	} else {
+		tablename = "amf_message_history"
+		sessiontable = "amf_session_history"
+		sessionreltable = "amf_session_rel_history"
+		eventtable = "amf_event_history"
+	}
+	count,cmerr := util.CheckCount(context,Db,tablename,startdate,enddate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from message table is: %v\n",count)
+	context.Logger.Info("Count from message table is: %v\n",count)
+	count1,cmerr := util.CheckCount(context,Db,sessiontable,startdate,enddate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",sessiontable,count1)
+	context.Logger.Info("Count from %v table is: %v\n",sessiontable,count1)
+	count2,cmerr := util.CheckCount(context,Db,sessionreltable,startdate,enddate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",sessionreltable,count2)
+	context.Logger.Info("Count from %v table is: %v\n",sessionreltable,count2)
+	count3,cmerr := util.CheckCount(context,Db,eventtable,startdate,enddate)
+	if cmerr != nil{
+	}
+	fmt.Printf("Count from %v table is: %v\n",eventtable,count3)
+	context.Logger.Info("Count from %v table is: %v\n",eventtable,count3)
+	util.CheckDistinctSenderWithCount(context,Db,tablename,startdate,enddate)
+	util.CheckDistinctReceiverWithCount(context,Db,tablename,startdate,enddate)
 	return nil
 }

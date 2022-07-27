@@ -160,3 +160,81 @@ func (util *DbUtil) CheckCount(context utilities.AppContext,Db *sql.DB,tablename
 	return 0,nil
 
 }
+
+func (util *DbUtil) CheckDistinctSenderWithCount (context utilities.AppContext,Db *sql.DB,tablename,fromdate,todate string){
+	if fromdate == ""{
+		query := "select distinct sender,count(*) from "+tablename+" where create_time <= $1 group by sender"
+		rows,err := Db.Query(query,todate)
+		if err != nil{
+			//return nil,err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var count int
+			var sender string
+			err := rows.Scan(&sender,&count)
+			if err != nil {
+				//return 0, err
+			}
+			context.Logger.Info("Sender :%v with Count: %v from %v\n",sender,count,tablename)
+			fmt.Printf("Sender :%v with Count: %v from %v\n",sender,count,tablename)
+
+		}
+	} else {
+		query := "select distinct sender,count(*) from "+tablename+" where create_time >= $1 and create_time <= $2 group by sender"
+		rows,err := Db.Query(query,fromdate,todate)
+		if err != nil{
+			//return nil,err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var count int
+			var sender string
+			err := rows.Scan(&sender,&count)
+			if err != nil {
+				//return 0, err
+			}
+			context.Logger.Info("Sender :%v with Count: %v from %v\n",sender,count,tablename)
+			fmt.Printf("Sender :%v with Count: %v from %v\n",sender,count,tablename)
+		}
+	}
+}
+
+func (util *DbUtil) CheckDistinctReceiverWithCount (context utilities.AppContext,Db *sql.DB,tablename,fromdate,todate string){
+	if fromdate == ""{
+		query := "select distinct receiver,count(*) from "+tablename+" where create_time <= $1 group by receiver"
+		rows,err := Db.Query(query,todate)
+		if err != nil{
+			//return nil,err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var count int
+			var receiver string
+			err := rows.Scan(&receiver,&count)
+			if err != nil {
+				//return 0, err
+			}
+			context.Logger.Info("Receiver :%v with Count: %v from %v\n",receiver,count,tablename)
+			fmt.Printf("Receiver :%v with Count: %v from %v\n",receiver,count,tablename)
+
+		}
+	} else {
+		query := "select distinct receiver,count(*) from "+tablename+" where create_time >= $1 and create_time <= $2 group by receiver"
+		rows,err := Db.Query(query,fromdate,todate)
+		if err != nil{
+			//return nil,err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var count int
+			var receiver string
+			err := rows.Scan(&receiver,&count)
+			if err != nil {
+				//return 0, err
+			}
+			context.Logger.Info("Receiver :%v with Count: %v from %v\n",receiver,count,tablename)
+			fmt.Printf("Receiver :%v with Count: %v from %v\n",receiver,count,tablename)
+		}
+	}
+}
