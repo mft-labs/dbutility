@@ -95,6 +95,7 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 	err:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_message_history")
 	if err != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in message table%v",err)
 		} else{
 			fmt.Printf("error when inserting records to message history table%v",err)
 			context.Logger.Info("error when inserting records to message history table%v",err)
@@ -111,6 +112,7 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 	serr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_session_history")
 	if serr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in session table%v",err)
 		} else{
 			fmt.Printf("error when inserting records to session history table%v",serr)
 			context.Logger.Info("error when inserting records to session history table%v",serr)
@@ -127,6 +129,7 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 	srerr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in session rel table%v",err)
 		} else{
 			fmt.Printf("error when inserting records to session rel history table%v",srerr)
 			context.Logger.Info("error when inserting records to session rel history table%v",srerr)
@@ -142,6 +145,7 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 	eerr:= util.InsertToHistoryTable(context,Db,last14daydate,"amf_event_history")
 	if eerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in event table%v",err)
 		} else{
 			fmt.Printf("error when inserting records to event history table%v",eerr)
 			context.Logger.Info("error when inserting records to event history table%v",eerr)
@@ -160,6 +164,7 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdat
 	err := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_message_history")
 	if err != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in message table%v",err)
 		} else{
 			fmt.Printf("error when inserting message history record%v\n",err)
 			context.Logger.Info("error when inserting message history record%v\n",err)
@@ -175,6 +180,7 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdat
 	serr := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_session_history")
 	if serr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in session table%v",err)
 		} else {
 			fmt.Printf("error when inserting session history record%v\n", err)
 			context.Logger.Info("error when inserting session history record%v\n", err)
@@ -191,6 +197,7 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdat
 	srerr := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_session_rel_history")
 	if srerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in session rel table%v",err)
 		} else {
 			fmt.Printf("error when inserting session relation record%v\n", srerr)
 			context.Logger.Info("error when inserting session relation record%v\n", srerr)
@@ -206,6 +213,7 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdat
 	eventerr := util.InsertLastMonthHistory(context,Db,startdate,enddate,"amf_event_history")
 	if eventerr != nil{
 		if strings.Contains(err.Error(),"duplicate key value"){
+			context.Logger.Info("Duplicate key exists in event table%v",err)
 		} else {
 			fmt.Printf("error when inserting event history record%v\n", eventerr)
 			context.Logger.Info("error when inserting event history record%v\n", eventerr)

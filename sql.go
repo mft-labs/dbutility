@@ -24,21 +24,23 @@ func (util *DbUtil) DeleteHistory(context utilities.AppContext,Db *sql.DB,fromda
 	if fromdate == ""{
 		query := "delete from "+tablename+" where create_time <= $1"
 		resp, err := Db.Exec(query,todate)
-		fmt.Printf("Delete response for %v is: %v\n",tablename,resp)
-		context.Logger.Info("Delete query for %v is: %v\n",tablename,query)
-		context.Logger.Info("Delete response for %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("Delete response for %v is: %v\n",tablename,rowcount)
+		//context.Logger.Info("Delete query for %v is: %v\n",tablename,query)
+		context.Logger.Info("Delete response for %v is: %v\n",tablename,rowcount)
 	} else {
 		query := "delete from "+tablename+" where create_time >= $1 and create_time <= $2"
 		resp, err := Db.Exec(query,fromdate,todate)
-		context.Logger.Info("Delete query for %v is: %v\n",tablename,query)
-		fmt.Printf("Delete response for %v is: %v\n",tablename,resp)
-		context.Logger.Info("Delete response for %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
+		rowcount,_ := resp.RowsAffected()
+		//context.Logger.Info("Delete query for %v is: %v\n",tablename,query)
+		fmt.Printf("Delete response for %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("Delete response for %v is: %v\n",tablename,rowcount)
 	}
 
 	return nil
@@ -49,41 +51,42 @@ func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB
 		Query := INSERT_INTO_MESSAGE_HISTORY+SELECT_MESSAGES+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query,then)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	} else if tablename == "amf_session_history"{
 		Query := INSERT_INTO_SESSION_HISTORY+SELECT_SESSIONS+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query,then)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	} else if tablename == "amf_session_rel_history"{
 		Query := INSERT_INTO_SESSION_REL_HISTORY+SELECT_SESSION_REL+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query,then)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	} else if tablename == "amf_event_history"{
 		Query := INSERT_INTO_EVENT_HISTORY+SELECT_EVENT+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query,then)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	}
 	return nil
 }
@@ -94,45 +97,45 @@ func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.
 		Query := INSERT_INTO_MESSAGE_HISTORY+SELECT_MESSAGES+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	} else if tablename == "amf_session_history"{
 		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_SESSION_HISTORY+SELECT_SESSIONS+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	} else if tablename == "amf_session_rel_history"{
 		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_SESSION_REL_HISTORY+SELECT_SESSION_REL+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	} else if tablename == "amf_event_history"{
 		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_EVENT_HISTORY+SELECT_EVENT+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
-		fmt.Printf("response for adding data to %v is: %v\n",tablename,resp)
-		context.Logger.Info("response for adding data to %v is: %v\n",tablename,resp)
 		if err != nil{
 			return err
 		}
-		return nil
+		rowcount,_ := resp.RowsAffected()
+		fmt.Printf("response for adding data to %v is: %v\n",tablename,rowcount)
+		context.Logger.Info("response for adding data to %v is: %v\n",tablename,rowcount)
 	}
 	return nil
 }
