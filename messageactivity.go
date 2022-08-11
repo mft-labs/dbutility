@@ -1,19 +1,19 @@
 package dbutility
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 	"amfui/utilities"
+	"amfui/dbconnector"
 )
 
 type DbUtil struct{
-	Db    *sql.DB
+	Db    *dbconnector.DbConnector
 	Timezone string
 }
 
-func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utilitytype,startdate,enddate string,clean,validatemain,validatehistory bool) error{
+func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *dbconnector.DbConnector,utilitytype,startdate,enddate string,clean,validatemain,validatehistory bool) error{
 	startdate = startdate +" 00:00:00"
 	enddate = enddate+" 23:59:59"
 	now := time.Now().UTC()
@@ -85,7 +85,7 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext,Db *sql.DB,utility
 	return nil
 }
 
-func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14daydate string) error{
+func (util *DbUtil) RangeAll(context utilities.AppContext,Db *dbconnector.DbConnector,last14daydate string) error{
 	context.Logger.Info("Date range is: %v\n",last14daydate)
 	count,cmerr := util.CheckCount(context,Db,"amf_message","",last14daydate)
 	if cmerr != nil{
@@ -155,7 +155,7 @@ func (util *DbUtil) RangeAll(context utilities.AppContext,Db *sql.DB,last14dayda
 	return nil
 }
 
-func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdate,enddate string) error{
+func (util *DbUtil) WithinRange(context utilities.AppContext,Db *dbconnector.DbConnector,startdate,enddate string) error{
 	count,cmerr := util.CheckCount(context,Db,"amf_message",startdate,enddate)
 	if cmerr != nil{
 	}
@@ -223,7 +223,7 @@ func (util *DbUtil) WithinRange(context utilities.AppContext,Db *sql.DB,startdat
 	return nil
 }
 
-func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14daydate string) error{
+func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *dbconnector.DbConnector,last14daydate string) error{
 	count,cmerr := util.CheckCount(context,Db,"amf_message","",last14daydate)
 	if cmerr != nil{
 	}
@@ -276,7 +276,7 @@ func (util *DbUtil) DeleteAll(context utilities.AppContext,Db *sql.DB,last14dayd
 	return nil
 }
 
-func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate string) error{
+func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *dbconnector.DbConnector,last14daydate,presentDate string) error{
 	count,cmerr := util.CheckCount(context,Db,"amf_message",last14daydate,presentDate)
 	if cmerr != nil{
 	}
@@ -327,7 +327,7 @@ func (util *DbUtil) DeleteWithinRange(context utilities.AppContext,Db *sql.DB,la
 }
 
 
-func (util *DbUtil) ValidateAll(context utilities.AppContext,Db *sql.DB,last14daydate,tabletype string) error{
+func (util *DbUtil) ValidateAll(context utilities.AppContext,Db *dbconnector.DbConnector,last14daydate,tabletype string) error{
 	var tablename string
 	var sessiontable string
 	var sessionreltable string
@@ -368,7 +368,7 @@ func (util *DbUtil) ValidateAll(context utilities.AppContext,Db *sql.DB,last14da
 	return nil
 }
 
-func (util *DbUtil) ValidateWithinRange(context utilities.AppContext,Db *sql.DB,startdate,enddate,tabletype string) error{
+func (util *DbUtil) ValidateWithinRange(context utilities.AppContext,Db *dbconnector.DbConnector,startdate,enddate,tabletype string) error{
 	var tablename string
 	var sessiontable string
 	var sessionreltable string

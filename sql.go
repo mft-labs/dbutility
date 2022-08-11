@@ -1,9 +1,9 @@
 package dbutility
 
 import (
-	"database/sql"
 	"amfui/utilities"
 	"fmt"
+	"amfui/dbconnector"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	INSERT_INTO_EVENT_HISTORY = "insert into amf_event_history (event_id,level,message_id,session_id,action_id,text,status,create_time,created_by)"
 )
 
-func (util *DbUtil) DeleteHistory(context utilities.AppContext,Db *sql.DB,fromdate,todate,tablename string) error{
+func (util *DbUtil) DeleteHistory(context utilities.AppContext,Db *dbconnector.DbConnector,fromdate,todate,tablename string) error{
 	if fromdate == ""{
 		query := "delete from "+tablename+" where create_time <= $1"
 		resp, err := Db.Exec(query,todate)
@@ -46,11 +46,12 @@ func (util *DbUtil) DeleteHistory(context utilities.AppContext,Db *sql.DB,fromda
 	return nil
 }
 
-func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB,then string,tablename string) error{
+func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *dbconnector.DbConnector,then string,tablename string) error{
 	if tablename == "amf_message_history"{
 		Query := INSERT_INTO_MESSAGE_HISTORY+SELECT_MESSAGES+" where create_time <= $1"
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query,then)
+		fmt.Printf("resp type:%T",resp)
 		if err != nil{
 			return err
 		}
@@ -91,12 +92,13 @@ func (util *DbUtil) InsertToHistoryTable(context utilities.AppContext,Db *sql.DB
 	return nil
 }
 
-func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.DB,last14daydate,presentDate,tablename string) error{
+func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *dbconnector.DbConnector,last14daydate,presentDate,tablename string) error{
 	if tablename == "amf_message_history"{
 		whereClause := " where create_time >= '"+last14daydate+"' and create_time <= '"+presentDate+"'"
 		Query := INSERT_INTO_MESSAGE_HISTORY+SELECT_MESSAGES+whereClause
 		context.Logger.Info("Insert query for %v is: %v\n",tablename,Query)
 		resp, err := Db.Exec(Query)
+		fmt.Printf("resp type:%T",resp)
 		if err != nil{
 			return err
 		}
@@ -140,7 +142,7 @@ func (util *DbUtil) InsertLastMonthHistory(context utilities.AppContext,Db *sql.
 	return nil
 }
 
-func (util *DbUtil) CheckCount(context utilities.AppContext,Db *sql.DB,tablename,fromdate,todate string) (int,error){
+func (util *DbUtil) CheckCount(context utilities.AppContext,Db *dbconnector.DbConnector,tablename,fromdate,todate string) (int,error){
 	if fromdate == ""{
 		query := "select count(*) from "+tablename+" where create_time <= $1"
 		row := Db.QueryRow(query,todate)
@@ -164,7 +166,7 @@ func (util *DbUtil) CheckCount(context utilities.AppContext,Db *sql.DB,tablename
 
 }
 
-func (util *DbUtil) CheckDistinctSenderWithCount (context utilities.AppContext,Db *sql.DB,tablename,fromdate,todate string){
+func (util *DbUtil) CheckDistinctSenderWithCount (context utilities.AppContext,Db *dbconnector.DbConnector,tablename,fromdate,todate string){
 	if fromdate == ""{
 		query := "select distinct sender,count(*) from "+tablename+" where create_time <= $1 group by sender"
 		rows,err := Db.Query(query,todate)
@@ -203,7 +205,7 @@ func (util *DbUtil) CheckDistinctSenderWithCount (context utilities.AppContext,D
 	}
 }
 
-func (util *DbUtil) CheckDistinctReceiverWithCount (context utilities.AppContext,Db *sql.DB,tablename,fromdate,todate string){
+func (util *DbUtil) CheckDistinctReceiverWithCount (context utilities.AppContext,Db *dbconnector.DbConnector,tablename,fromdate,todate string){
 	if fromdate == ""{
 		query := "select distinct receiver,count(*) from "+tablename+" where create_time <= $1 group by receiver"
 		rows,err := Db.Query(query,todate)
