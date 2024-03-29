@@ -28,6 +28,16 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext, Db *dbconnector.D
 			fmt.Printf("error when inserting records to history tables%v", err)
 			context.Logger.Info("error when inserting records to history tables%v", err)
 			return err
+		} else {
+			fmt.Printf("Clean data from main table\n")
+			fmt.Printf("Date range is::%v\n", fromdate)
+			context.Logger.Info("Date range is::%v\n", fromdate)
+			err := util.DeleteAll(context, Db, fromdate)
+			if err != nil {
+				fmt.Printf("error when inserting range of records to history tables%v\n", err)
+				context.Logger.Info("error when inserting range of records to history tables%v\n", err)
+				return err
+			}
 		}
 	} else if utilitytype == "" && clean == false && validatemain == false && validatehistory == false {
 		fmt.Printf("Start Date is::%v\n", startdate)
@@ -39,6 +49,18 @@ func (util *DbUtil) PrepareQuery(context utilities.AppContext, Db *dbconnector.D
 			fmt.Printf("error when inserting range of records to history tables%v\n", err)
 			context.Logger.Info("error when inserting range of records to history tables%v\n", err)
 			return err
+		} else {
+			fmt.Printf("Clean data from main table\n")
+			fmt.Printf("Start Date is::%v\n", startdate)
+			fmt.Printf("End Date is::%v\n", enddate)
+			context.Logger.Info("Start Date is::%v\n", startdate)
+			context.Logger.Info("End Date is::%v\n", enddate)
+			err := util.DeleteWithinRange(context, Db, startdate, enddate)
+			if err != nil {
+				fmt.Printf("error when inserting range of records to history tables%v\n", err)
+				context.Logger.Info("error when inserting range of records to history tables%v\n", err)
+				return err
+			}
 		}
 	} else if clean && utilitytype == "all" && validatemain == false && validatehistory == false {
 		fmt.Printf("Date range is::%v\n", fromdate)
